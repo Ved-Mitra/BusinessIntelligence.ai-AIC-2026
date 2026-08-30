@@ -122,7 +122,7 @@ async function selectKpi(kpiId, cardEl) {
 
   // Reset panel state
   document.getElementById('insightsKpiName').textContent = kpiId.replace(/_/g, ' ').toUpperCase();
-  document.getElementById('narrativeText').textContent   = 'Generating analysis…';
+  document.getElementById('narrativeText').innerHTML     = '<em style="color:var(--text-secondary)">Generating analysis…</em>';
   document.getElementById('actionsList').innerHTML       = '';
   document.getElementById('driversChart').innerHTML      = '';
   document.getElementById('lineageInfo').textContent     = '';
@@ -136,7 +136,7 @@ async function selectKpi(kpiId, cardEl) {
     const data = await res.json();
 
     if (data.error) {
-      document.getElementById('narrativeText').textContent = `Error: ${data.error}`;
+      document.getElementById('narrativeText').innerHTML = `<span style="color:var(--danger)">Error: ${data.error}</span>`;
       return;
     }
 
@@ -158,7 +158,7 @@ async function selectKpi(kpiId, cardEl) {
     }
 
     // ── Narrative (typewriter) ───────────────────────────────────────────────
-    typeWriter('narrativeText', data.narrative || '');
+    renderMarkdown('narrativeText', data.narrative || '');
 
     // ── Drivers chart ────────────────────────────────────────────────────────
     if (data.drivers && data.drivers.length > 0) {
@@ -204,7 +204,7 @@ async function selectKpi(kpiId, cardEl) {
       document.getElementById('tCost').textContent     = (t.estimated_cost_usd || 0).toFixed(6);
     }
   } catch (err) {
-    document.getElementById('narrativeText').textContent = 'Failed to fetch narrative. Check console.';
+    document.getElementById('narrativeText').innerHTML = '<span style="color:var(--danger)">Failed to fetch narrative. Check console.</span>';
     console.error('selectKpi error:', err);
   }
 }
@@ -236,18 +236,89 @@ function renderDrivers(drivers) {
   });
 }
 
-// ── Typewriter animation ──────────────────────────────────────────────────────
-function typeWriter(elementId, text) {
-  const el = document.getElementById(elementId);
-  el.textContent = '';
-  let i = 0;
-  function step() {
-    if (i < text.length) {
-      el.textContent += text[i++];
-      setTimeout(step, 12);
-    }
+// ── Markdown → HTML renderer ─────────────────────────────────────────────────
+// Converts a subset of Markdown to safe HTML for the narrative panel.
+// Supports: headings (##/###), bold (**), italic (*), hr (---),
+//           unordered lists (* / - ), ordered lists (1. ), paragraphs.
+function markdownToHtml(md) {
+  if (!md) return '';
+
+  const lines = md.split('\n');
+  const out   = [];
+  let inUl    = false;
+  let inOl    = false;
+
+  function closeLists() {
+    if (inUl) { out.push('</ul>'); inUl = false; }
+    if (inOl) { out.push('</ol>'); inOl = false; }
   }
-  step();
+
+  function inlineFormat(str) {
+    return str
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.+?)\*/g,     '<em>$1</em>')
+      .replace(/`(.+?)`/g,       '<code>$1</code>');
+  }
+
+  for (const rawLine of lines) {
+    const line = rawLine.trimEnd();
+
+    // Horizontal rule
+    if (/^---+$/.test(line.trim())) {
+      closeLists();
+      out.push('<hr>');
+      continue;
+    }
+
+    // Headings
+    const h4 = line.match(/^#{3,}\s+(.+)/);
+    if (h4) { closeLists(); out.push(`<h4>${inlineFormat(h4[1])}</h4>`); continue; }
+    const h3 = line.match(/^#{2}\s+(.+)/);
+    if (h3) { closeLists(); out.push(`<h3>${inlineFormat(h3[1])}</h3>`); continue; }
+
+    // Unordered list
+    const ul = line.match(/^[\*\-]\s+(.+)/);
+    if (ul) {
+      if (inOl) { out.push('</ol>'); inOl = false; }
+      if (!inUl) { out.push('<ul>'); inUl = true; }
+      out.push(`<li>${inlineFormat(ul[1])}</li>`);
+      continue;
+    }
+
+    // Ordered list
+    const ol = line.match(/^\d+\.\s+(.+)/);
+    if (ol) {
+      if (inUl) { out.push('</ul>'); inUl = false; }
+      if (!inOl) { out.push('<ol>'); inOl = true; }
+      out.push(`<li>${inlineFormat(ol[1])}</li>`);
+      continue;
+    }
+
+    // Empty line = paragraph break
+    if (line.trim() === '') {
+      closeLists();
+      out.push('<br>');
+      continue;
+    }
+
+    // Normal paragraph line
+    closeLists();
+    out.push(`<p>${inlineFormat(line)}</p>`);
+  }
+
+  closeLists();
+  return out.join('\n');
+}
+
+// Renders markdown as HTML into the target element with a fade-in
+function renderMarkdown(elementId, markdownText) {
+  const el = document.getElementById(elementId);
+  el.innerHTML = markdownToHtml(markdownText);
+  el.style.opacity = '0';
+  el.style.transition = 'opacity 0.4s ease';
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => { el.style.opacity = '1'; });
+  });
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

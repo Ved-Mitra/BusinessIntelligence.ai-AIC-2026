@@ -58,7 +58,18 @@ body {
   gap: 1.5rem;
   padding: 1.5rem;
   flex: 1;
-  overflow: hidden;
+  overflow: hidden;       /* keeps layout within viewport height */
+  min-height: 0;          /* required for flex children to shrink */
+}
+
+/* Every column scrolls independently */
+.kpi-sidebar,
+.insights-area,
+.telemetry-sidebar {
+  overflow-y: auto;
+  min-height: 0;
+  scrollbar-width: thin;
+  scrollbar-color: var(--glass-border) transparent;
 }
 
 .glass-panel {
@@ -95,8 +106,6 @@ body {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-  overflow-y: auto;
-  max-height: 100%;
 }
 .insights-panel.hidden { display: none; }
 
@@ -106,10 +115,36 @@ body {
 .badge { padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
 .badge.anomaly { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2); }
 .badge.normal { background: rgba(16, 185, 129, 0.1); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.2); }
+.badge.warning { background: rgba(245, 158, 11, 0.1); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.2); }
 
 h3 { font-size: 0.875rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.75rem; }
 
-.narrative-section p { line-height: 1.6; font-size: 1.05rem; }
+/* ── Rendered Markdown narrative styles ──────────────────────────────── */
+.narrative-section { line-height: 1.7; font-size: 1rem; }
+.narrative-section p { margin: 0 0 0.75rem; }
+.narrative-section p:last-child { margin-bottom: 0; }
+.narrative-section h3,
+.narrative-section h4 {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin: 1.2rem 0 0.5rem;
+  font-weight: 600;
+}
+.narrative-section strong { color: var(--text-primary); font-weight: 600; }
+.narrative-section em { color: var(--text-secondary); font-style: italic; }
+.narrative-section hr {
+  border: none;
+  border-top: 1px solid var(--glass-border);
+  margin: 1rem 0;
+}
+.narrative-section ul, .narrative-section ol {
+  margin: 0.5rem 0 0.75rem 1.25rem;
+  padding: 0;
+}
+.narrative-section li { margin-bottom: 0.3rem; }
+/* ─────────────────────────────────────────────────────────────────────── */
 
 .actions-list { list-style: none; padding: 0; margin: 0; }
 .actions-list li { background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px; margin-bottom: 0.5rem; border-left: 3px solid var(--accent-blue); }
