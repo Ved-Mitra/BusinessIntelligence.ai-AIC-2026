@@ -16,6 +16,7 @@ const cors    = require('cors');
 const path    = require('path');
 
 const kpiRoutes       = require('./routes/kpiRoutes');
+const analysisRoutes  = require('./routes/analysisRoutes');
 const feedbackRoutes  = require('./routes/feedbackRoutes');
 const telemetryRoutes = require('./routes/telemetryRoutes');
 
@@ -48,6 +49,7 @@ app.get('/health', (req, res) => {
 
 // ── API Routes ────────────────────────────────────────────────────────────────
 app.use('/api/kpis',      kpiRoutes);
+app.use('/api/analysis',  analysisRoutes);
 app.use('/api/feedback',  feedbackRoutes);
 app.use('/api/telemetry', telemetryRoutes);
 
