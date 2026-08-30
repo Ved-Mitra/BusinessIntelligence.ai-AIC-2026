@@ -9,7 +9,8 @@ frontend/node_modules/
 !*.env.example
 
 # SQLite DB (generated on first run)
-data/db.sqlite
+data/db.sqlite*
+*.sqlite*
 
 # Build output
 frontend/dist/
