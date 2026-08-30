@@ -1,5 +1,5 @@
 /**
- * main.js — BusinessIntelligence.ai Frontend
+ * main.js — Intelliboard Frontend
  * Connects to the Express API and renders the KPI dashboard.
  */
 
