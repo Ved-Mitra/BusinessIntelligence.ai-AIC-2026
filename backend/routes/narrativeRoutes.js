@@ -94,10 +94,14 @@ router.get('/:kpiId', async (req, res) => {
         abstention: false,
         narrative: narrativeResult.text,
         actions: actionsResult.actions,
+        drivers: rankedDrivers,                 // for frontend bar chart
         evidence: {
-            method: 'LLM + SQL',
+            method: 'SQL (anomaly/drivers) + LLM (narrative/actions)',
             confidence: confidence.label,
-            sources: [kpiResult.primarySource]
+            sources: [kpiResult.primarySource, kpiResult.lineage?.upstream].flat().filter(Boolean),
+            anomaly: anomaly.isAnomaly,
+            confidenceReason: confidence.reason,
+            lineage: kpiResult.lineage,
         },
         telemetry: {
             total_latency_ms: totalLatency,
