@@ -134,14 +134,16 @@ function getSourceFreshness() {
 
 /**
  * Inject a WHERE clause addition into a SQL string.
- * Handles both "WHERE year = :year AND month = :month" patterns
- * and cross-source subquery patterns.
+ * Uses the 's' (dotAll) flag so . matches newlines in multi-line SQL.
+ * Only injects into the outermost sales_daily WHERE clause,
+ * not into subqueries that reference other tables.
  */
 function injectRegionFilter(sql, regionClause) {
   if (!regionClause) return sql;
-  // Only inject into the main FROM sales_daily clause (not subqueries for other tables)
+  // Match: FROM sales_daily WHERE ... up to either ) or end-of-string
+  // 's' flag makes . match newlines; 'i' for case-insensitivity
   return sql.replace(
-    /(FROM sales_daily\s+WHERE[^)]*?)(\)|\s*$)/,
+    /(FROM\s+sales_daily\s+WHERE\s+(?:(?!\bFROM\b).)*?)(\s*(?=\))|$)/si,
     (match, p1, p2) => `${p1}${regionClause}${p2}`
   );
 }

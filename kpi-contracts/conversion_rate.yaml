@@ -3,7 +3,7 @@ name: Conversion Rate
 description: Percentage of website/store sessions that result in a completed sale (order).
 
 formula:
-  sql: "SELECT ROUND((SUM(units_sold) / NULLIF(SUM(sessions),0)) * 100, 3) AS value FROM sales_daily WHERE year = :year AND month = :month"
+  sql: "SELECT ROUND((CAST(SUM(units_sold) AS REAL) / NULLIF(SUM(sessions),0)) * 100, 3) AS value FROM sales_daily WHERE year = :year AND month = :month"
   human: "Orders / Sessions × 100"
 
 primary_source: sales_daily
