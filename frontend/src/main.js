@@ -1,151 +1,297 @@
-let currentPersona = 'analyst';
-let currentKpiId = null;
+/**
+ * main.js — BusinessIntelligence.ai Frontend
+ * Connects to the Express API and renders the KPI dashboard.
+ */
+
+let currentPersona     = 'analyst';
+let currentKpiId       = null;
 let currentNarrativeId = null;
 
 const apiBase = '/api';
 
+// ── Bootstrap ────────────────────────────────────────────────────────────────
 async function init() {
   await loadPersonas();
   await loadKpis();
+
+  // Wire feedback buttons here (after DOM is ready, elements exist)
+  document.getElementById('btnThumbsUp')
+    .addEventListener('click', () => sendFeedback('thumbs_up'));
+  document.getElementById('btnThumbsDown')
+    .addEventListener('click', () => sendFeedback('thumbs_down'));
 }
 
+// ── Personas ─────────────────────────────────────────────────────────────────
 async function loadPersonas() {
-  const res = await fetch(`${apiBase}/kpis/personas`);
-  const data = await res.json();
-  const select = document.createElement('select');
-  select.id = 'personaSelect';
-  
-  data.personas.forEach(p => {
-    const opt = document.createElement('option');
-    opt.value = p.id;
-    opt.textContent = p.label;
-    if (p.id === currentPersona) opt.selected = true;
-    select.appendChild(opt);
-  });
+  try {
+    const res  = await fetch(`${apiBase}/kpis/personas`);
+    const data = await res.json();
+    const select = document.createElement('select');
+    select.id = 'personaSelect';
 
-  select.addEventListener('change', async (e) => {
-    currentPersona = e.target.value;
-    await loadKpis();
-    document.getElementById('insightsPanel').classList.add('hidden');
-  });
+    data.personas.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value       = p.id;
+      opt.textContent = p.label;
+      if (p.id === currentPersona) opt.selected = true;
+      select.appendChild(opt);
+    });
 
-  document.getElementById('personaSwitcher').appendChild(select);
+    select.addEventListener('change', async (e) => {
+      currentPersona = e.target.value;
+      document.getElementById('insightsPanel').classList.add('hidden');
+      clearBadge();
+      await loadKpis();
+    });
+
+    document.getElementById('personaSwitcher').appendChild(select);
+  } catch (err) {
+    console.error('Failed to load personas:', err);
+  }
 }
 
-function formatCurrency(val) {
-  if (val === null || val === undefined) return '-';
-  if (val > 1000000) return '$' + (val / 1000000).toFixed(2) + 'M';
-  if (val > 1000) return '$' + (val / 1000).toFixed(1) + 'K';
-  return '$' + val.toFixed(2);
+// ── KPI Cards ─────────────────────────────────────────────────────────────────
+function formatValue(kpi) {
+  const v = kpi.value;
+  if (v === null || v === undefined) return '—';
+  if (kpi.kpiId === 'gross_margin' || kpi.kpiId === 'conversion_rate') {
+    return v.toFixed(3) + '%';
+  }
+  if (kpi.kpiId === 'cac') return '$' + v.toFixed(2);
+  // Currency
+  if (v >= 1_000_000) return '$' + (v / 1_000_000).toFixed(2) + 'M';
+  if (v >= 1_000)     return '$' + (v / 1_000).toFixed(1) + 'K';
+  return '$' + v.toFixed(2);
 }
 
 async function loadKpis() {
-  const res = await fetch(`${apiBase}/kpis?year=2025&month=10`, { headers: { 'x-persona': currentPersona } });
-  const data = await res.json();
   const list = document.getElementById('kpiList');
-  list.innerHTML = '';
+  list.innerHTML = '<div style="color:var(--text-secondary);font-size:.85rem">Loading…</div>';
 
-  data.kpis.forEach(kpi => {
-    const card = document.createElement('div');
-    card.className = 'kpi-card';
-    card.dataset.kpi = kpi.kpiId;
-    
-    let valStr = kpi.kpiId === 'gross_margin' || kpi.kpiId === 'conversion_rate' 
-      ? (kpi.value ? kpi.value + '%' : '-') 
-      : formatCurrency(kpi.value);
+  try {
+    const res  = await fetch(`${apiBase}/kpis?year=2025&month=10`, {
+      headers: { 'x-persona': currentPersona },
+    });
+    const data = await res.json();
+    list.innerHTML = '';
 
-    let changeClass = kpi.pctChange > 0 ? 'up' : (kpi.pctChange < 0 ? 'down' : '');
-    let changeSymbol = kpi.pctChange > 0 ? '↑' : (kpi.pctChange < 0 ? '↓' : '');
+    if (!data.kpis || data.kpis.length === 0) {
+      list.innerHTML = '<div style="color:var(--text-secondary)">No KPIs accessible for this role.</div>';
+      return;
+    }
 
-    card.innerHTML = `
-      <div class="kpi-name">${kpi.name}</div>
-      <div class="kpi-val">${valStr}</div>
-      <div class="kpi-change ${changeClass}">${changeSymbol} ${Math.abs(kpi.pctChange || 0)}% vs last month</div>
-    `;
+    data.kpis.forEach(kpi => {
+      const card  = document.createElement('div');
+      card.className   = 'kpi-card';
+      card.dataset.kpi = kpi.kpiId;
 
-    card.addEventListener('click', () => selectKpi(kpi.kpiId, card));
-    list.appendChild(card);
-  });
+      const changeClass  = (kpi.pctChange ?? 0) > 0 ? 'up' : ((kpi.pctChange ?? 0) < 0 ? 'down' : '');
+      const changeSymbol = (kpi.pctChange ?? 0) > 0 ? '↑' : ((kpi.pctChange ?? 0) < 0 ? '↓' : '—');
+      const changeText   = kpi.pctChange !== null
+        ? `${changeSymbol} ${Math.abs(kpi.pctChange).toFixed(1)}% vs last month`
+        : 'No prior period';
+
+      const sparseTag = kpi.sparseHistory
+        ? '<span style="font-size:.7rem;color:var(--warning);margin-left:.5rem">SPARSE</span>'
+        : '';
+
+      card.innerHTML = `
+        <div class="kpi-name">${kpi.name}${sparseTag}</div>
+        <div class="kpi-val">${formatValue(kpi)}</div>
+        <div class="kpi-change ${changeClass}">${changeText}</div>
+      `;
+
+      card.addEventListener('click', () => selectKpi(kpi.kpiId, card));
+      list.appendChild(card);
+    });
+  } catch (err) {
+    list.innerHTML = '<div style="color:var(--danger)">Error loading KPIs. Is the backend running?</div>';
+    console.error('loadKpis error:', err);
+  }
 }
 
+// ── Select a KPI → fetch narrative ───────────────────────────────────────────
 async function selectKpi(kpiId, cardEl) {
   currentKpiId = kpiId;
+
   document.querySelectorAll('.kpi-card').forEach(c => c.classList.remove('active'));
   cardEl.classList.add('active');
 
   const panel = document.getElementById('insightsPanel');
   panel.classList.remove('hidden');
-  document.getElementById('narrativeText').textContent = 'Generating AI synthesis...';
-  document.getElementById('actionsList').innerHTML = '';
-  document.getElementById('driversChart').innerHTML = '';
 
-  const res = await fetch(`${apiBase}/narrative/${kpiId}?year=2025&month=10`, { headers: { 'x-persona': currentPersona } });
-  const data = await res.json();
+  // Reset panel state
+  document.getElementById('insightsKpiName').textContent = kpiId.replace(/_/g, ' ').toUpperCase();
+  document.getElementById('narrativeText').textContent   = 'Generating analysis…';
+  document.getElementById('actionsList').innerHTML       = '';
+  document.getElementById('driversChart').innerHTML      = '';
+  document.getElementById('lineageInfo').textContent     = '';
+  clearBadge();
+  clearTelemetry();
 
-  currentNarrativeId = data.narrative_id;
-
-  // Header
-  document.getElementById('insightsKpiName').textContent = kpiId.toUpperCase();
-  const badge = document.getElementById('anomalyBadge');
-  if (data.abstention) {
-    badge.textContent = 'ABSTAINED';
-    badge.className = 'badge normal';
-  } else if (data.evidence && data.evidence.confidence === 'High') {
-    badge.textContent = 'ANOMALY DETECTED';
-    badge.className = 'badge anomaly';
-  }
-
-  // Narrative
-  typeWriterEffect('narrativeText', data.narrative || '');
-
-  // Actions
-  const aList = document.getElementById('actionsList');
-  if (data.actions && data.actions.length > 0) {
-    data.actions.forEach(act => {
-      const li = document.createElement('li');
-      li.innerHTML = `<strong>${act.lever || act.action}</strong> ${act.action} (Impact: ${act.expected_impact}) [Owner: ${act.owner}]`;
-      aList.appendChild(li);
+  try {
+    const res  = await fetch(`${apiBase}/narrative/${kpiId}?year=2025&month=10`, {
+      headers: { 'x-persona': currentPersona },
     });
-  } else {
-    aList.innerHTML = '<li>No actions recommended.</li>';
-  }
+    const data = await res.json();
 
-  // Telemetry
-  if (data.telemetry) {
-    document.getElementById('tTotal').textContent = data.telemetry.total_latency_ms + 'ms';
-    document.getElementById('tNonLlm').textContent = (data.telemetry.non_llm_latency_ms || 0) + 'ms';
-    document.getElementById('tLlm').textContent = (data.telemetry.llm_latency_ms || 0) + 'ms';
-    document.getElementById('tInTokens').textContent = data.telemetry.input_tokens || 0;
-    document.getElementById('tOutTokens').textContent = data.telemetry.output_tokens || 0;
-    document.getElementById('tCost').textContent = (data.telemetry.estimated_cost_usd || 0).toFixed(5);
+    if (data.error) {
+      document.getElementById('narrativeText').textContent = `Error: ${data.error}`;
+      return;
+    }
+
+    currentNarrativeId = data.narrative_id;
+
+    // ── Badge ────────────────────────────────────────────────────────────────
+    const badge = document.getElementById('anomalyBadge');
+    if (data.abstention) {
+      badge.textContent = 'LOW CONFIDENCE — ABSTAINED';
+      badge.className   = 'badge warning';
+    } else if (data.evidence?.anomaly) {
+      badge.textContent = 'ANOMALY DETECTED';
+      badge.className   = 'badge anomaly';
+    } else {
+      badge.textContent = data.evidence?.confidence
+        ? `Confidence: ${data.evidence.confidence}`
+        : 'OK';
+      badge.className   = 'badge normal';
+    }
+
+    // ── Narrative (typewriter) ───────────────────────────────────────────────
+    typeWriter('narrativeText', data.narrative || '');
+
+    // ── Drivers chart ────────────────────────────────────────────────────────
+    if (data.drivers && data.drivers.length > 0) {
+      renderDrivers(data.drivers);
+    }
+
+    // ── Actions ──────────────────────────────────────────────────────────────
+    const aList = document.getElementById('actionsList');
+    if (!data.abstention && data.actions && data.actions.length > 0) {
+      data.actions.forEach(act => {
+        const li = document.createElement('li');
+        const lever  = act.lever  || act.driver  || '—';
+        const action = act.action || '—';
+        const impact = act.expected_impact || '—';
+        const owner  = act.owner  || '—';
+        li.innerHTML = `<strong>${lever}</strong>: ${action}<br><small>Impact: ${impact} · Owner: ${owner}</small>`;
+        aList.appendChild(li);
+      });
+    } else {
+      aList.innerHTML = '<li>No actions recommended.</li>';
+    }
+
+    // ── Evidence / Lineage ───────────────────────────────────────────────────
+    if (data.evidence) {
+      const src = Array.isArray(data.evidence.sources)
+        ? data.evidence.sources.join(', ')
+        : data.evidence.sources || '—';
+      document.getElementById('lineageInfo').innerHTML =
+        `<strong>Source(s):</strong> ${src} &nbsp;|&nbsp;
+         <strong>Method:</strong> ${data.evidence.method || '—'} &nbsp;|&nbsp;
+         <strong>Confidence:</strong> ${data.evidence.confidence || '—'}<br>
+         <small style="color:var(--text-secondary)">LLM used only for narrative synthesis — all numbers are SQL-derived.</small>`;
+    }
+
+    // ── Telemetry ────────────────────────────────────────────────────────────
+    if (data.telemetry) {
+      const t = data.telemetry;
+      document.getElementById('tTotal').textContent    = t.total_latency_ms    + ' ms';
+      document.getElementById('tNonLlm').textContent   = (t.non_llm_latency_ms || 0) + ' ms';
+      document.getElementById('tLlm').textContent      = (t.llm_latency_ms     || 0) + ' ms';
+      document.getElementById('tInTokens').textContent = t.input_tokens  || 0;
+      document.getElementById('tOutTokens').textContent= t.output_tokens || 0;
+      document.getElementById('tCost').textContent     = (t.estimated_cost_usd || 0).toFixed(6);
+    }
+  } catch (err) {
+    document.getElementById('narrativeText').textContent = 'Failed to fetch narrative. Check console.';
+    console.error('selectKpi error:', err);
   }
 }
 
-function typeWriterEffect(elementId, text) {
+// ── Driver Bar Chart (pure SVG-free, CSS bars) ───────────────────────────────
+function renderDrivers(drivers) {
+  const container = document.getElementById('driversChart');
+  container.innerHTML = '';
+
+  const maxAbs = Math.max(...drivers.map(d => Math.abs(d.contribution_pct || 0)), 1);
+
+  drivers.forEach(d => {
+    const pct       = d.contribution_pct ?? 0;
+    const barWidth  = (Math.abs(pct) / maxAbs * 100).toFixed(1);
+    const typeClass = d.type === 'negative' ? 'negative' : (d.type === 'positive' ? 'positive' : '');
+    const sign      = pct > 0 ? '+' : '';
+
+    const row = document.createElement('div');
+    row.className = 'driver-bar-container';
+    row.innerHTML = `
+      <span title="${d.method || ''}">${d.name}</span>
+      <div class="driver-bar-bg">
+        <div class="driver-bar-fill ${typeClass}" style="width:${barWidth}%"></div>
+      </div>
+      <span style="color:${d.type === 'negative' ? 'var(--danger)' : 'var(--success)'}">${sign}${pct}%</span>
+    `;
+    row.title = d.factor || '';
+    container.appendChild(row);
+  });
+}
+
+// ── Typewriter animation ──────────────────────────────────────────────────────
+function typeWriter(elementId, text) {
   const el = document.getElementById(elementId);
   el.textContent = '';
   let i = 0;
-  function type() {
+  function step() {
     if (i < text.length) {
-      el.textContent += text.charAt(i);
-      i++;
-      setTimeout(type, 15); // Fast typewriter
+      el.textContent += text[i++];
+      setTimeout(step, 12);
     }
   }
-  type();
+  step();
 }
 
-document.getElementById('btnThumbsUp').addEventListener('click', () => sendFeedback('thumbs_up'));
-document.getElementById('btnThumbsDown').addEventListener('click', () => sendFeedback('thumbs_down'));
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function clearBadge() {
+  const b = document.getElementById('anomalyBadge');
+  b.textContent = '';
+  b.className   = 'badge';
+}
 
-async function sendFeedback(rating) {
-  if (!currentNarrativeId) return;
-  await fetch(`${apiBase}/feedback`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-persona': currentPersona },
-    body: JSON.stringify({ narrative_id: currentNarrativeId, kpi_id: currentKpiId, persona: currentPersona, rating })
+function clearTelemetry() {
+  ['tTotal','tNonLlm','tLlm','tInTokens','tOutTokens','tCost'].forEach(id => {
+    document.getElementById(id).textContent = '—';
   });
-  alert('Feedback recorded!');
 }
 
+// ── Feedback ──────────────────────────────────────────────────────────────────
+async function sendFeedback(rating) {
+  if (!currentNarrativeId) {
+    alert('Please select a KPI first.');
+    return;
+  }
+  try {
+    await fetch(`${apiBase}/feedback`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'x-persona': currentPersona },
+      body:    JSON.stringify({
+        narrative_id:    currentNarrativeId,
+        kpi_id:          currentKpiId,
+        persona:         currentPersona,
+        rating,
+        correction_text: '',
+      }),
+    });
+    const btn = rating === 'thumbs_up'
+      ? document.getElementById('btnThumbsUp')
+      : document.getElementById('btnThumbsDown');
+    btn.textContent = rating === 'thumbs_up' ? '👍 Recorded!' : '👎 Recorded!';
+    setTimeout(() => {
+      btn.textContent = rating === 'thumbs_up' ? '👍 Accurate' : '👎 Needs Correction';
+    }, 2000);
+  } catch (err) {
+    console.error('sendFeedback error:', err);
+  }
+}
+
+// ── Start ─────────────────────────────────────────────────────────────────────
 init();
