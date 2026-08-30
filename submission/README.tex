@@ -1,0 +1,369 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{enumitem}
+\usepackage{amsmath}
+\usepackage{fancyhdr}
+\usepackage{tcolorbox}
+\usepackage{titlesec}
+
+% Colors
+\definecolor{primary}{RGB}{15, 23, 42}
+\definecolor{accent}{RGB}{79, 142, 247}
+\definecolor{codebg}{RGB}{245, 247, 250}
+\definecolor{bordercolor}{RGB}{226, 232, 240}
+
+% Page styling
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\textcolor{gray}{\small BusinessIntelligence.ai — Technical Specification}}
+\lhead{\textcolor{gray}{\small Accenture Innovation Challenge 2026}}
+\cfoot{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% Hyperlink styling
+\hypersetup{
+    colorlinks=true,
+    linkcolor=accent,
+    filecolor=accent,      
+    urlcolor=accent,
+    citecolor=accent
+}
+
+% Code listing styling
+\lstset{
+    backgroundcolor=\color{codebg},
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    frame=single,
+    rulecolor=\color{bordercolor},
+    keywordstyle=\color{accent}\bfseries,
+    showstringspaces=false
+}
+
+\title{\Huge\textbf{BusinessIntelligence.ai}\\[0.5em] \Large KPI Intelligence-to-Action Engine\\[0.3em] \normalsize Technical Architecture, Implementation Specification \& Execution Guide}
+\author{\textbf{Team BusinessIntelligence.ai} \\ Accenture Innovation Challenge 2026 — Round 2 Prototype}
+\date{August 2026}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Traditional business intelligence dashboards report metric variances (e.g., ``Revenue dropped 8\% in West Region'') but consistently fail to explain \textit{why} the movement occurred or \textit{what concrete actions} decision-makers should take. The resulting translation gap demands days of manual analyst investigation. This document specifies the architecture, algorithmic design, and execution of \textbf{BusinessIntelligence.ai}, a production-ready KPI Intelligence-to-Action Engine. The system couples deterministic, SQL-based statistical anomaly detection and additive driver decomposition with an LLM narrative synthesis layer (Gemini 2.0 Flash). Under our strict ``No-Hallucination'' architectural paradigm, large language models are prohibited from performing quantitative calculations or directly accessing raw database rows, guaranteeing 100\% mathematical auditability while delivering persona-calibrated narratives, honest uncertainty abstentions, and role-governed action recommendations.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+\section{Implementation Approach}
+
+\subsection{Core Design Principle: The No-Hallucination Architecture}
+The central design requirement established by the problem statement is that \textbf{the Large Language Model (LLM) must never be treated as the source of quantitative truth.} 
+
+In conventional generative analytics architectures, LLMs are frequently prompted to aggregate numbers or interpret raw transactional tables, introducing substantial risks of arithmetic errors, hallucinated percentages, and unverified causal claims. Our architecture strictly separates:
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{Deterministic Analytical Plane (Non-LLM):} Handles metric computation via SQL, Z-score anomaly detection, mathematical additive decomposition, rule-based confidence calibration, and role-based data entitlement filtering.
+    \item \textbf{Generative Narrative Plane (LLM):} Receives only pre-aggregated, statistically validated JSON summaries to generate persona-adapted prose, format structured recommendations, and articulate abstention reasoning.
+\end{enumerate}
+
+\begin{tcolorbox}[colback=codebg,colframe=accent,title=\textbf{The 10-Step Pipeline Execution Flow}]
+\begin{enumerate}[noitemsep]
+    \item \textbf{Contract Resolution:} Runtime loads declarative YAML semantic contracts specifying SQL expressions, lineages, and alert thresholds.
+    \item \textbf{Parameterized SQL Execution:} SQLite executes deterministic queries parameterized with temporal filters and RBAC regional constraints.
+    \item \textbf{Statistical Anomaly Evaluation:} Compares movements against contractual percentage and business impact thresholds ($Z > 2.5$).
+    \item \textbf{Additive Driver Decomposition:} Decomposes metric variance into Volume, Price, and Mix components ($\Delta\text{Rev} = \Delta V + \Delta P + \Delta M$).
+    \item \textbf{Heuristic Confidence Scoring:} Evaluates sample maturity, history duration, and cross-source consistency ($0.0 \le S \le 1.0$).
+    \item \textbf{Uncertainty \& Abstention Gate:} If confidence $S < 0.40$, halts processing and returns an explicit, calibrated abstention notice.
+    \item \textbf{LLM Context Serialization:} Packs deterministic analytical output into structured prompt context.
+    \item \textbf{Persona-Calibrated Synthesis:} Invokes Gemini 2.0 Flash with specialized persona system prompts (CEO, Analyst, Regional Manager).
+    \item \textbf{Structured Action Generation:} LLM returns structured action arrays: $\text{Driver} \to \text{Lever} \to \text{Action} \to \text{Impact} \to \text{Owner}$.
+    \item \textbf{Telemetry \& Evidence Logging:} Records execution latency, token consumption, estimated USD cost, and source lineage.
+\end{enumerate}
+\end{tcolorbox}
+
+\subsection{Addressing Real-World Operational Complexities}
+\begin{table}[h!]
+\centering
+\small
+\begin{tabularx}{\textwidth}{lX}
+\toprule
+\textbf{Complexity} & \textbf{Architectural Resolution} \\
+\midrule
+\textbf{Interacting Drivers} & Additive variance decomposition separating unit volume from price realization and product/channel mix. \\
+\textbf{Heterogeneous Cadences} & Unified relational storage reconciling daily transactional grain, weekly marketing logs, and monthly P\&L. \\
+\textbf{Sparse History / Cold Start} & Declarative \texttt{sparse\_history} flags in semantic contracts; automatically suppresses anomaly models until baseline window is satisfied. \\
+\textbf{Contradictory / Ambiguous Data} & Confidence scoring engine triggers programmatic abstentions with explicit diagnostic justifications. \\
+\textbf{Multi-Tenant Security / RBAC} & Dual-layer entitlement: SQL-level \texttt{WHERE} clause parameterization and persona prompt containment. \\
+\textbf{Operational Cost \& Latency} & Per-request runtime telemetry tracking token volume, microsecond latency breakdown, and inference costs. \\
+\bottomrule
+\end{tabularx}
+\caption{Operational Complexity Handling Matrix}
+\end{table}
+
+\newpage
+\section{Solution Architecture}
+
+\subsection{Layered System Topology}
+The system is constructed as a decoupled, multi-tier service architecture:
+
+\begin{verbatim}
+┌─────────────────────────────────────────────────────────────────────────┐
+│                      Presentation Layer (Vite / Vanilla JS)             │
+│   • Persona Selector    • KPI Matrix & Sparklines    • Variance Waterfall│
+│   • AI Synthesis Panel  • Structured Action Board    • Live Telemetry   │
+└────────────────────────────────────┬────────────────────────────────────┘
+                                     │ JSON over HTTP (Proxy :5173 -> :3001)
+┌────────────────────────────────────▼────────────────────────────────────┐
+│                    API Gateway & Controller Layer (Express)             │
+│   /api/kpis · /api/analysis/:id · /api/narrative/:id · /api/telemetry   │
+└───────────────────┬─────────────────────────────────┬───────────────────┘
+                    │                                 │
+┌───────────────────▼──────────────┐   ┌──────────────▼───────────────────┐
+│   Deterministic Analytical Core  │   │   Generative Narrative Engine    │
+│  • kpiEngine.js (SQL Core)       │   │  • geminiClient.js (Gemini SDK)  │
+│  • anomalyDetector.js (Z-Score)  │   │  • narrativeGenerator.js         │
+│  • contributionAnalysis.js (Math)│   │  • actionRecommender.js (JSON)   │
+│  • confidenceScorer.js (Heuristic│   │  • abstentionHandler.js          │
+└───────────────────┬──────────────┘   └──────────────▲───────────────────┘
+                    │ Deterministic Analysis Summary  │
+                    └─────────────────────────────────┘
+                                     │ Parameterized Queries & Audit Log
+┌────────────────────────────────────▼────────────────────────────────────┐
+│                    Relational Storage Layer (SQLite WAL)                │
+│   • sales_daily (4,992 rows)        • marketing_weekly (159 rows)       │
+│   • financials_monthly (12 rows)    • feedback & telemetry tables       │
+└─────────────────────────────────────────────────────────────────────────┘
+\end{verbatim}
+
+\subsection{Data Source Architecture and Grain Reconciliation}
+The engine synthesizes three distinct internal data feeds seeded across 12 months (2025):
+\begin{enumerate}
+    \item \textbf{Source A: Daily Sales (\texttt{sales\_daily}):} Grain: \texttt{[Date, Product, Region, Channel]}. Captures transactional volume, realized unit price, revenue, COGS, gross profit, website traffic sessions, and customer acquisition.
+    \item \textbf{Source B: Weekly Marketing Spend (\texttt{marketing\_weekly}):} Grain: \texttt{[Week, Channel]}. Captures channel spend across Online, Offline, and Partner channels, impression volumes, clicks, and CTR.
+    \item \textbf{Source C: Monthly Financials (\texttt{financials\_monthly}):} Grain: \texttt{[Month]}. Captures aggregate corporate OPEX, EBITDA, headcount, qualitative external events log, and data quality flags.
+\end{enumerate}
+
+\newpage
+\section{Deterministic Analytical Core (Non-LLM)}
+
+\subsection{Mathematical Additive Variance Decomposition}
+For revenue analysis, the engine decomposes the total variance between current period ($t$) and prior period ($t-1$) into exact constituent components:
+\begin{align}
+\Delta\text{Revenue} &= \text{Revenue}_t - \text{Revenue}_{t-1} \\
+\text{Volume Effect} &= (Q_t - Q_{t-1}) \times \bar{P}_{t-1} \\
+\text{Price Effect}  &= Q_t \times (\bar{P}_t - \bar{P}_{t-1}) \\
+\text{Mix/Channel Effect} &= \Delta\text{Revenue} - (\text{Volume Effect} + \text{Price Effect})
+\end{align}
+where $Q$ denotes units sold and $\bar{P}$ denotes average realized selling price. This formulation guarantees that the driver contributions sum to exactly 100\% of the observed revenue delta without mathematical residuals.
+
+\subsection{Statistical Materiality \& Anomaly Detection}
+A metric movement is flagged as anomalous if and only if:
+\begin{equation}
+\left( |\%\Delta| \ge \tau_{\text{pct}} \quad\lor\quad |\Delta\text{Value}| \ge \tau_{\text{USD}} \right) \quad\land\quad |Z| \ge 2.5
+\end{equation}
+where thresholds $\tau_{\text{pct}}$ and $\tau_{\text{USD}}$ are governed declaratively by the KPI contract.
+
+\subsection{Confidence Calibration \& Programmatic Abstention}
+The confidence scoring engine calculates an evidence reliability index $S \in [0, 1]$:
+\begin{itemize}[noitemsep]
+    \item \textbf{High Confidence ($S = 0.95$):} Complete historical data, multi-source corroboration, no qualitative data flags.
+    \item \textbf{Low Confidence ($S = 0.35$):} Incomplete attribution windows (e.g., CAC measured within $< 14$ days of a major campaign surge).
+    \item \textbf{Very Low Confidence ($S = 0.10$):} Sparse history ($< 8$ baseline weeks for newly launched products).
+\end{itemize}
+When $S < 0.40$, the engine activates the \texttt{abstentionHandler}, bypassing generative synthesis and returning a structured abstention notice with explicit remediation guidance.
+
+\section{Generative Narrative \& Action Layer (LLM)}
+
+\subsection{Persona-Specific System Prompting}
+When analytical confidence permits synthesis, pre-computed driver summaries are passed to Gemini 2.0 Flash with strictly constrained role instructions:
+\begin{itemize}
+    \item \textbf{CEO Persona:} Focuses on macro bottom-line variance, strategic trade-offs, and single highest-leverage executive intervention. Max 3--4 sentences.
+    \item \textbf{Analyst Persona:} Emphasizes mathematical decomposition percentages, Z-score significance, data lineage, and supplier feed data quality caveats.
+    \item \textbf{Regional Manager Persona:} Strict spatial containment (e.g., North Region only). Emphasizes regional sales volumes, local channel mix, and regional branch levers.
+\end{itemize}
+
+\subsection{Structured Action Recommendation Schema}
+Actions are generated in raw JSON according to a standardized schema:
+\begin{lstlisting}[language=json]
+[
+  {
+    "driver": "Volume Decline (West)",
+    "lever": "Supply Chain / Inventory Allocation",
+    "action": "Expedite inter-warehouse inventory transfer from Central to West hubs",
+    "expected_impact": "+$180K revenue recovery over 14 days",
+    "owner": "VP Supply Chain"
+  }
+]
+\end{lstlisting}
+
+\newpage
+\section{KPI Semantic Contracts}
+
+KPI metadata is maintained in declarative YAML definitions within \texttt{kpi-contracts/}:
+
+\begin{table}[h!]
+\centering
+\small
+\begin{tabularx}{\textwidth}{llllX}
+\toprule
+\textbf{KPI ID} & \textbf{Formula Expression} & \textbf{Grain} & \textbf{Threshold} & \textbf{Allowed Roles} \\
+\midrule
+\texttt{revenue} & $\sum(\text{units} \times \text{price})$ & Daily & $\pm 5\%$ / \$50K & CEO, Analyst, Reg Mgr \\
+\texttt{gross\_margin} & $(\text{Gross Profit} / \text{Rev}) \times 100$ & Monthly & $\pm 2\text{ pp}$ / \$30K & CEO, Analyst \\
+\texttt{cac} & $\text{Spend} / \text{New Customers}$ & Monthly & $\pm 15\%$ / \$10K & CEO, Analyst \\
+\texttt{conversion\_rate} & $(\text{Units} / \text{Sessions}) \times 100$ & Daily & $\pm 1\text{ pp}$ & All Personas \\
+\texttt{new\_product\_gmv} & $\sum\text{Rev}_{\text{new\_product}=1}$ & Daily & $\pm 20\%$ & CEO, Analyst \\
+\bottomrule
+\end{tabularx}
+\caption{Monitored KPI Specifications}
+\end{table}
+
+\section{Role-Based Access Control (RBAC)}
+
+Security and data entitlement are enforced across two decoupled boundaries:
+\begin{enumerate}
+    \item \textbf{SQL Query Layer:} Injects parameter-safe filters directly into the statement AST (e.g., \texttt{WHERE region = 'North'}).
+    \item \textbf{Prompt Context Layer:} Injects role constraints into the LLM system prompt, explicitly forbidding references to unauthorized regions or corporate-only metrics.
+\end{enumerate}
+
+\begin{table}[h!]
+\centering
+\small
+\begin{tabularx}{\textwidth}{lXXX}
+\toprule
+\textbf{Role Identifier} & \textbf{Permitted KPIs} & \textbf{Regional Filter} & \textbf{Granularity} \\
+\midrule
+\texttt{ceo} & All 5 KPIs & Global (All) & Monthly Aggregates \\
+\texttt{analyst} & All 5 KPIs & Global (All) & Full Daily Granularity \\
+\texttt{regional\_manager\_north} & Revenue, Conversion Rate & North Region Only & Regional Daily \\
+\texttt{regional_manager_south} & Revenue, Conversion Rate & South Region Only & Regional Daily \\
+\bottomrule
+\end{tabularx}
+\caption{Role Entitlement Matrix}
+\end{table}
+
+\section{System Dependencies \& Execution Guide}
+
+\subsection{Environment \& Software Prerequisites}
+\begin{itemize}[noitemsep]
+    \item \textbf{Node.js:} Version $\ge 18.0.0$ (LTS recommended)
+    \item \textbf{Python 3:} Version $\ge 3.8$ (used exclusively for synthetic data generation)
+    \item \textbf{npm:} Version $\ge 8.0.0$
+\end{itemize}
+
+\subsection{Backend Dependencies}
+\begin{itemize}[noitemsep]
+    \item \texttt{express} (\^{}4.21.0): REST routing framework
+    \item \texttt{better-sqlite3} (\^{}11.0.0): High-performance synchronous SQLite driver
+    \item \texttt{@google/genai} (\^{}1.0.0): Official Google Gen AI SDK for Gemini models
+    \item \texttt{js-yaml} (\^{}4.1.0): Declarative contract parser
+    \item \texttt{csv-parse} (\^{}5.5.6): High-throughput streaming CSV parser
+    \item \texttt{cors}, \texttt{dotenv}, \texttt{uuid}: Infrastructure utilities
+\end{itemize}
+
+\subsection{Frontend Dependencies}
+\begin{itemize}[noitemsep]
+    \item \texttt{vite} (\^{}5.4.1): Development server with HMR and production bundler.
+    \item Zero external UI frameworks (Vanilla ECMAScript 2022 + CSS Tokens).
+\end{itemize}
+
+\subsection{Step-by-Step Execution Instructions}
+
+\subsubsection{Step 1: Generate Deterministic Seed Data}
+\begin{lstlisting}[language=bash]
+# From repository root
+python3 scripts/generate_seed_data.py
+\end{lstlisting}
+Generates \texttt{data/seed/sales\_daily.csv} (4,992 rows), \texttt{marketing\_weekly.csv} (159 rows), and \texttt{financials\_monthly.csv} (12 rows).
+
+\subsubsection{Step 2: Initialize & Launch Backend API}
+\begin{lstlisting}[language=bash]
+cd backend
+npm install
+cp .env.example .env
+# Edit .env and supply GEMINI_API_KEY (optional: fallback mock active if omitted)
+npm run seed     # Builds SQLite database from CSV fixtures
+npm run dev      # Launches API service on http://localhost:3001
+\end{lstlisting}
+
+\subsubsection{Step 3: Launch Presentation Dashboard}
+\begin{lstlisting}[language=bash]
+# Open a secondary terminal
+cd frontend
+npm install
+npm run dev      # Launches Vite interface on http://localhost:5173
+\end{lstlisting}
+Navigate to \url{http://localhost:5173} to inspect the active intelligence interface.
+
+\newpage
+\section{API Reference Specification}
+
+All endpoints accept the standard header \texttt{X-Persona: <role>} and query parameters \texttt{year=2025\&month=10}.
+
+\begin{table}[h!]
+\centering
+\small
+\begin{tabularx}{\textwidth}{llX}
+\toprule
+\textbf{Method} & \textbf{Endpoint} & \textbf{Description} \\
+\midrule
+\texttt{GET} & \texttt{/health} & Service health, version, and server timestamp. \\
+\texttt{GET} & \texttt{/api/personas} & Enumerates available roles and entitlement metadata. \\
+\texttt{GET} & \texttt{/api/sources} & Ingestion freshness timestamps and row counts. \\
+\texttt{GET} & \texttt{/api/kpis} & Evaluates all accessible KPIs for the caller persona. \\
+\texttt{GET} & \texttt{/api/kpis/:id} & Returns single KPI valuation, formula, and lineage. \\
+\texttt{GET} & \texttt{/api/analysis/:id} & Returns statistical anomaly state and driver decomposition. \\
+\texttt{GET} & \texttt{/api/narrative/:id} & Synthesizes persona narrative, actions, and telemetry. \\
+\texttt{POST} & \texttt{/api/feedback} & Records analyst rating (\texttt{thumbs\_up/down}) and corrections. \\
+\texttt{GET} & \texttt{/api/feedback} & Returns audit log of feedback entries (Analyst role required). \\
+\texttt{GET} & \texttt{/api/telemetry} & Returns recent request latency, token counts, and cost logs. \\
+\texttt{GET} & \texttt{/api/telemetry/stats} & Aggregate cost, token consumption, and latency metrics. \\
+\bottomrule
+\end{tabularx}
+\caption{REST API Endpoint Reference}
+\end{table}
+
+\section{Verified Hackathon Demo Scenarios}
+
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{Scenario 1: Multi-Factor Revenue Drop (Month 10):}
+    \begin{itemize}[noitemsep]
+        \item \textit{Observed Change:} Revenue drops $-33.56\%$ from \$2.14M to \$1.42M ($Z = -3.36$).
+        \item \textit{Decomposition:} Volume Effect (84.4\% / $-\$717\text{K}$), Price Effect (15.6\% / $-\$150\text{K}$), Mix Effect ($-\$32\text{K}$).
+        \item \textit{Outcome:} CEO receives macro executive guidance; Analyst receives exact statistical variance; Regional Manager North receives only North-isolated decline ($-\$148\text{K}$).
+    \end{itemize}
+    
+    \item \textbf{Scenario 2: Low-Confidence CAC Abstention:}
+    \begin{itemize}[noitemsep]
+        \item \textit{Observed Change:} CAC increases $+88.04\%$ to \$210.93.
+        \item \textit{Analytical Gate:} Attribution window incomplete ($S = 0.35$).
+        \item \textit{Outcome:} Engine abstains with diagnostic message, preventing premature marketing budget cuts.
+    \end{itemize}
+
+    \item \textbf{Scenario 3: Sparse-History Cold Start:}
+    \begin{itemize}[noitemsep]
+        \item \textit{Observed Change:} New Product GMV (AI Insights Module launched Aug 2025).
+        \item \textit{Analytical Gate:} History duration $< 8\text{ weeks}$ ($S = 0.10$).
+        \item \textit{Outcome:} Anomaly detection suppressed; interface renders raw trend with a clear \texttt{SPARSE} tag.
+    \end{itemize}
+
+    \item \textbf{Scenario 4: Dual-Layer Security Enforcement:}
+    \begin{itemize}[noitemsep]
+        \item \textit{Action:} Caller assumes \texttt{regional\_manager\_north}.
+        \item \textit{Outcome:} Gross Margin and CAC cards vanish; direct invocation to \texttt{/api/kpis/gross\_margin} returns \textbf{HTTP 403 Forbidden}.
+    \end{itemize}
+
+    \item \textbf{Scenario 5: Closed-Loop Human Feedback:}
+    \begin{itemize}[noitemsep]
+        \item \textit{Action:} Analyst submits correction: \textit{``Supplier delay affected West in W3''}.
+        \item \textit{Outcome:} Persisted in SQLite feedback store with narrative ID linkage for offline prompt fine-tuning.
+    \end{itemize}
+\end{enumerate}
+
+\end{document}
