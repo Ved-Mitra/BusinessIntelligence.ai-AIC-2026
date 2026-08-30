@@ -12,6 +12,7 @@
 \usepackage{tcolorbox}
 \usepackage{titlesec}
 \usepackage{graphicx}
+\usepackage{array} % Added for advanced column formatting
 
 % Corporate Colors
 \definecolor{accenturepurple}{RGB}{161, 0, 255}
@@ -73,12 +74,13 @@ Enterprises have invested billions of dollars modernizing their data stacks (Sno
 
 \begin{figure}[h!]
 \centering
+\footnotesize
 \begin{verbatim}
-┌─────────────────────────┐       ┌─────────────────────────┐       ┌─────────────────────────┐
-│     Current State       │       │    The Translation Gap  │       │     Desired State       │
-│  "Revenue is down 8%"   │  ───► │ 3-5 Days of Manual SQL, │  ───► │  "Supply issue in West; │
-│   (Tableau / PowerBI)   │       │ Ad-Hoc Analyst Slicing  │       │  transfer stock now"    │
-└─────────────────────────┘       └─────────────────────────┘       └─────────────────────────┘
++-------------------------+       +-------------------------+       +-------------------------+
+|     Current State       |       |    The Translation Gap  |       |     Desired State       |
+|  "Revenue is down 8%"   | --->  | 3-5 Days of Manual SQL, |  ---> |  "Supply issue in West; |
+|   (Tableau / PowerBI)   |       | Ad-Hoc Analyst Slicing  |       |  transfer stock now"    |
++-------------------------+       +-------------------------+       +-------------------------+
 \end{verbatim}
 \caption{The Enterprise Intelligence-to-Action Translation Gap}
 \end{figure}
@@ -108,7 +110,7 @@ Recent attempts to apply Large Language Models directly to enterprise databases 
 \begin{table}[h!]
 \centering
 \small
-\begin{tabularx}{\textwidth}{lXX}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{4cm} >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}X}
 \toprule
 \textbf{Capability} & \textbf{Traditional BI (Tableau/PowerBI)} & \textbf{BusinessIntelligence.ai} \\
 \midrule
@@ -139,7 +141,7 @@ Recent attempts to apply Large Language Models directly to enterprise databases 
 \begin{table}[h!]
 \centering
 \small
-\begin{tabularx}{\textwidth}{lXXX}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{3.5cm} >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}X}
 \toprule
 \textbf{Persona} & \textbf{Primary Pain Point} & \textbf{Engine Experience} & \textbf{Value Realized} \\
 \midrule
@@ -150,7 +152,7 @@ Recent attempts to apply Large Language Models directly to enterprise databases 
 \textbf{Regional Manager} & Corporate metrics contain irrelevant global data; needs local levers. & Filtered to assigned geography; isolates regional volume drops and provides local inventory/pricing levers. & Direct, autonomous operational response at branch level. \\
 \bottomrule
 \end{tabularx}
-\caption{Target Persona Alignment & Value Realization}
+\caption{Target Persona Alignment \& Value Realization}
 \end{table}
 
 \subsection{End-to-End Persona Walkthrough: October Revenue Drop}
@@ -158,22 +160,23 @@ In Month 10 of our benchmark dataset, Corporate Revenue declined by \textbf{33.6
 
 \begin{figure}[h!]
 \centering
+\footnotesize
 \begin{verbatim}
-                     ┌────────────────────────────────────────┐
-                     │    Single Source of Truth: SQL Core    │
-                     │  -33.6% Drop | Vol: -84% | Price: -16% │
-                     └───────────────────┬────────────────────┘
-                                         │
-       ┌─────────────────────────────────┼─────────────────────────────────┐
-       ▼                                 ▼                                 ▼
-┌──────────────────────┐      ┌──────────────────────┐      ┌──────────────────────┐
-│     CEO View         │      │    Analyst View      │      │  Regional Mgr View   │
-│ "Revenue fell 33.6%  │      │ "Z = -3.36 (p<0.01). │      │ "North revenue down  │
-│ due to West supply   │      │ Units -43.2% (West   │      │ 28% due to price     │
-│ bottleneck and a 7%  │      │ disruption W1-W3).   │      │ discount. West supply│
-│ price erosion. Move  │      │ Price -$21.65. Mix   │      │ issue did not impact │
-│ stock immediately."  │      │ -$32K. Data: PARTIAL"│      │ your region."        │
-└──────────────────────┘      └──────────────────────┘      └──────────────────────┘
+                     +----------------------------------------+
+                     |    Single Source of Truth: SQL Core    |
+                     |  -33.6% Drop | Vol: -84% | Price: -16% |
+                     +-------------------+--------------------+
+                                         |
+       +---------------------------------+---------------------------------+
+       v                                 v                                 v
++----------------------+      +----------------------+      +----------------------+
+|      CEO View        |      |    Analyst View      |      |  Regional Mgr View   |
+| "Revenue fell 33.6%  |      | "Z = -3.36 (p<0.01). |      | "North revenue down  |
+| due to West supply   |      | Units -43.2% (West   |      | 28% due to price     |
+| bottleneck and a 7%  |      | disruption W1-W3).   |      | discount. West supply|
+| price erosion. Move  |      | Price -$21.65. Mix   |      | issue did not impact |
+| stock immediately."  |      | -$32K. Data: PARTIAL"|      | your region."        |
++----------------------+      +----------------------+      +----------------------+
 \end{verbatim}
 \caption{Persona-Calibrated Insight Dissemination}
 \end{figure}
@@ -181,13 +184,13 @@ In Month 10 of our benchmark dataset, Corporate Revenue declined by \textbf{33.6
 \newpage
 \section{Financial Impact \& ROI Model}
 
-\subsection{Quantified Cost Savings & Efficiency Gains}
+\subsection{Quantified Cost Savings \& Efficiency Gains}
 For a mid-market to enterprise organization with 50 operational KPIs and a team of 10 business analysts:
 
 \begin{table}[h!]
 \centering
 \small
-\begin{tabularx}{\textwidth}{lrrr}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}X r r r}
 \toprule
 \textbf{Metric} & \textbf{Before (Manual BI)} & \textbf{With BusinessIntelligence.ai} & \textbf{Annual Benefit} \\
 \midrule
@@ -238,7 +241,7 @@ When an analyst identifies missing business context (e.g., an unrecorded supplie
 \begin{table}[h!]
 \centering
 \small
-\begin{tabularx}{\textwidth}{lXll}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{4.5cm} >{\raggedright\arraybackslash}X l l}
 \toprule
 \textbf{Phase} & \textbf{Key Objectives \& Deliverables} & \textbf{Duration} & \textbf{Milestone} \\
 \midrule

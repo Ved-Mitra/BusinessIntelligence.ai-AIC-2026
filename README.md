@@ -1,4 +1,4 @@
-# BusinessIntelligence.ai — KPI Intelligence-to-Action Engine
+# Intelliboard — KPI Intelligence-to-Action Engine
 
 > **Accenture Innovation Challenge 2026 — Round 2 Prototype**
 

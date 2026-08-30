@@ -11,6 +11,7 @@
 \usepackage{fancyhdr}
 \usepackage{tcolorbox}
 \usepackage{titlesec}
+\usepackage{array} % Added for advanced column formatting
 
 % Colors
 \definecolor{primary}{RGB}{15, 23, 42}
@@ -113,32 +114,32 @@ In conventional generative analytics architectures, LLMs are frequently prompted
 The system is constructed as a decoupled, multi-tier service architecture:
 
 \begin{verbatim}
-┌─────────────────────────────────────────────────────────────────────────┐
-│                      Presentation Layer (Vite / Vanilla JS)             │
-│   • Persona Selector    • KPI Matrix & Sparklines    • Variance Waterfall│
-│   • AI Synthesis Panel  • Structured Action Board    • Live Telemetry   │
-└────────────────────────────────────┬────────────────────────────────────┘
-                                     │ JSON over HTTP (Proxy :5173 -> :3001)
-┌────────────────────────────────────▼────────────────────────────────────┐
-│                    API Gateway & Controller Layer (Express)             │
-│   /api/kpis · /api/analysis/:id · /api/narrative/:id · /api/telemetry   │
-└───────────────────┬─────────────────────────────────┬───────────────────┘
-                    │                                 │
-┌───────────────────▼──────────────┐   ┌──────────────▼───────────────────┐
-│   Deterministic Analytical Core  │   │   Generative Narrative Engine    │
-│  • kpiEngine.js (SQL Core)       │   │  • geminiClient.js (Gemini SDK)  │
-│  • anomalyDetector.js (Z-Score)  │   │  • narrativeGenerator.js         │
-│  • contributionAnalysis.js (Math)│   │  • actionRecommender.js (JSON)   │
-│  • confidenceScorer.js (Heuristic│   │  • abstentionHandler.js          │
-└───────────────────┬──────────────┘   └──────────────▲───────────────────┘
-                    │ Deterministic Analysis Summary  │
-                    └─────────────────────────────────┘
-                                     │ Parameterized Queries & Audit Log
-┌────────────────────────────────────▼────────────────────────────────────┐
-│                    Relational Storage Layer (SQLite WAL)                │
-│   • sales_daily (4,992 rows)        • marketing_weekly (159 rows)       │
-│   • financials_monthly (12 rows)    • feedback & telemetry tables       │
-└─────────────────────────────────────────────────────────────────────────┘
++-------------------------------------------------------------------------+
+|                     Presentation Layer (Vite / Vanilla JS)              |
+|   * Persona Selector    * KPI Matrix & Sparklines    * Variance Waterfall|
+|   * AI Synthesis Panel  * Structured Action Board    * Live Telemetry   |
++------------------------------------+------------------------------------+
+                                     | JSON over HTTP (Proxy :5173 -> :3001)
++------------------------------------v------------------------------------+
+|                    API Gateway & Controller Layer (Express)             |
+|   /api/kpis * /api/analysis/:id * /api/narrative/:id * /api/telemetry   |
++-------------------+---------------------------------+-------------------+
+                    |                                 |
++-------------------v--------------+   +--------------v-------------------+
+|   Deterministic Analytical Core  |   |   Generative Narrative Engine    |
+|  * kpiEngine.js (SQL Core)       |   |  * geminiClient.js (Gemini SDK)  |
+|  * anomalyDetector.js (Z-Score)  |   |  * narrativeGenerator.js         |
+|  * contributionAnalysis.js (Math)|   |  * actionRecommender.js (JSON)   |
+|  * confidenceScorer.js (Heuristic|   |  * abstentionHandler.js          |
++-------------------+--------------+   +--------------^-------------------+
+                    | Deterministic Analysis Summary  |
+                    +---------------------------------+
+                                     | Parameterized Queries & Audit Log
++------------------------------------v------------------------------------+
+|                    Relational Storage Layer (SQLite WAL)                |
+|   * sales_daily (4,992 rows)        * marketing_weekly (159 rows)       |
+|   * financials_monthly (12 rows)    * feedback & telemetry tables       |
++-------------------------------------------------------------------------+
 \end{verbatim}
 
 \subsection{Data Source Architecture and Grain Reconciliation}
@@ -235,14 +236,14 @@ Security and data entitlement are enforced across two decoupled boundaries:
 \begin{table}[h!]
 \centering
 \small
-\begin{tabularx}{\textwidth}{lXXX}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{5cm} X X X}
 \toprule
 \textbf{Role Identifier} & \textbf{Permitted KPIs} & \textbf{Regional Filter} & \textbf{Granularity} \\
 \midrule
 \texttt{ceo} & All 5 KPIs & Global (All) & Monthly Aggregates \\
 \texttt{analyst} & All 5 KPIs & Global (All) & Full Daily Granularity \\
 \texttt{regional\_manager\_north} & Revenue, Conversion Rate & North Region Only & Regional Daily \\
-\texttt{regional_manager_south} & Revenue, Conversion Rate & South Region Only & Regional Daily \\
+\texttt{regional\_manager\_south} & Revenue, Conversion Rate & South Region Only & Regional Daily \\
 \bottomrule
 \end{tabularx}
 \caption{Role Entitlement Matrix}
@@ -259,17 +260,17 @@ Security and data entitlement are enforced across two decoupled boundaries:
 
 \subsection{Backend Dependencies}
 \begin{itemize}[noitemsep]
-    \item \texttt{express} (\^{}4.21.0): REST routing framework
-    \item \texttt{better-sqlite3} (\^{}11.0.0): High-performance synchronous SQLite driver
-    \item \texttt{@google/genai} (\^{}1.0.0): Official Google Gen AI SDK for Gemini models
-    \item \texttt{js-yaml} (\^{}4.1.0): Declarative contract parser
-    \item \texttt{csv-parse} (\^{}5.5.6): High-throughput streaming CSV parser
+    \item \texttt{express} (\textasciicircum 4.21.0): REST routing framework
+    \item \texttt{better-sqlite3} (\textasciicircum 11.0.0): High-performance synchronous SQLite driver
+    \item \texttt{@google/genai} (\textasciicircum 1.0.0): Official Google Gen AI SDK for Gemini models
+    \item \texttt{js-yaml} (\textasciicircum 4.1.0): Declarative contract parser
+    \item \texttt{csv-parse} (\textasciicircum 5.5.6): High-throughput streaming CSV parser
     \item \texttt{cors}, \texttt{dotenv}, \texttt{uuid}: Infrastructure utilities
 \end{itemize}
 
 \subsection{Frontend Dependencies}
 \begin{itemize}[noitemsep]
-    \item \texttt{vite} (\^{}5.4.1): Development server with HMR and production bundler.
+    \item \texttt{vite} (\textasciicircum 5.4.1): Development server with HMR and production bundler.
     \item Zero external UI frameworks (Vanilla ECMAScript 2022 + CSS Tokens).
 \end{itemize}
 
