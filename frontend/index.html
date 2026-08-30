@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BusinessIntelligence.ai</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/src/style.css">
+  </head>
+  <body>
+    <div id="app">
+      <!-- Header -->
+      <header class="glass-header">
+        <div class="logo">BusinessIntelligence<span>.ai</span></div>
+        <div class="persona-switcher" id="personaSwitcher">
+          <!-- Populated by JS -->
+        </div>
+      </header>
+
+      <!-- Main Layout -->
+      <main class="dashboard">
+        <!-- KPI Sidebar -->
+        <section class="kpi-sidebar">
+          <h2>Monitored KPIs</h2>
+          <div id="kpiList" class="kpi-list">
+             <!-- KPI Cards go here -->
+          </div>
+        </section>
+
+        <!-- Insights Area -->
+        <section class="insights-area">
+          <div id="insightsPanel" class="glass-panel insights-panel hidden">
+            <div class="panel-header">
+              <h2 id="insightsKpiName">KPI Name</h2>
+              <span id="anomalyBadge" class="badge"></span>
+            </div>
+            
+            <div class="narrative-section">
+              <h3>AI Synthesis</h3>
+              <p id="narrativeText" class="typewriter"></p>
+            </div>
+
+            <div class="actions-section">
+              <h3>Recommended Actions</h3>
+              <ul id="actionsList" class="actions-list"></ul>
+            </div>
+
+            <div class="drivers-section">
+              <h3>Driver Contribution</h3>
+              <div id="driversChart" class="drivers-chart"></div>
+            </div>
+
+            <div class="evidence-section">
+              <h3>Evidence & Lineage <span id="confidenceMeter"></span></h3>
+              <p id="lineageInfo"></p>
+            </div>
+            
+            <div class="feedback-section">
+              <button id="btnThumbsUp" class="btn-feedback">👍 Accurate</button>
+              <button id="btnThumbsDown" class="btn-feedback">👎 Needs Correction</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Telemetry Panel -->
+        <section class="telemetry-sidebar">
+           <div class="glass-panel">
+             <h3>Runtime Telemetry</h3>
+             <ul id="telemetryList" class="telemetry-list">
+                <li><span>Total Latency:</span> <span id="tTotal">-</span></li>
+                <li><span>Non-LLM Latency:</span> <span id="tNonLlm">-</span></li>
+                <li><span>LLM Latency:</span> <span id="tLlm">-</span></li>
+                <li><span>Input Tokens:</span> <span id="tInTokens">-</span></li>
+                <li><span>Output Tokens:</span> <span id="tOutTokens">-</span></li>
+                <li><span>Cost:</span> $<span id="tCost">-</span></li>
+             </ul>
+           </div>
+        </section>
+      </main>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
