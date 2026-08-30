@@ -1,0 +1,32 @@
+id: gross_margin
+name: Gross Margin %
+description: Percentage of revenue remaining after deducting cost of goods sold (COGS).
+
+formula:
+  sql: "SELECT ROUND((SUM(gross_profit) / NULLIF(SUM(revenue),0)) * 100, 2) AS value FROM sales_daily WHERE year = :year AND month = :month"
+  human: "(Revenue - COGS) / Revenue × 100"
+
+primary_source: sales_daily
+secondary_source: financials_monthly
+cadence: monthly
+grain: [month, product_id]
+
+drivers:
+  - product_mix
+  - cogs_per_unit
+  - pricing
+  - channel_mix
+
+alert_threshold:
+  pct_point_change: 2    # ±2 percentage points triggers check
+  business_impact_usd: 30000
+
+lineage:
+  upstream: [sales_daily.gross_profit, sales_daily.revenue]
+  transformations: "Ratio of summed gross_profit to summed revenue"
+  data_quality_check: "Zero-revenue denominator handled with NULLIF"
+
+personas_allowed: [ceo, analyst]    # regional_manager NOT allowed
+
+sparse_history: false
+min_periods_for_anomaly: 3   # months

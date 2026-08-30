@@ -1,0 +1,36 @@
+id: revenue
+name: Revenue
+description: Total revenue generated from product sales across all regions, products, and channels.
+
+formula:
+  sql: "SELECT SUM(revenue) AS value FROM sales_daily WHERE year = :year AND month = :month"
+  human: "SUM(units_sold × unit_price)"
+
+primary_source: sales_daily
+cadence: daily
+grain: [date, product_id, region, channel]
+
+drivers:
+  - price
+  - volume
+  - product_mix
+  - channel_mix
+  - region_mix
+  - seasonality
+
+alert_threshold:
+  pct_change: 5        # ±5% vs prior period triggers anomaly check
+  business_impact_usd: 50000
+
+lineage:
+  upstream: [sales_daily.revenue]
+  transformations: "SUM aggregation; no adjustments"
+  data_quality_check: "NULL revenue rows excluded; negative revenue flagged"
+
+personas_allowed: [ceo, analyst, regional_manager_north, regional_manager_south]
+
+# region_manager gets filtered automatically by entitlements.js
+region_filter_key: region
+
+sparse_history: false
+min_periods_for_anomaly: 30   # days of history required

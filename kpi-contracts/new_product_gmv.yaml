@@ -1,0 +1,33 @@
+id: new_product_gmv
+name: New Product GMV
+description: Gross Merchandise Value (revenue) from newly launched products only. Currently tracking AI Insights Module (P004), launched 2025-08-01.
+
+formula:
+  sql: "SELECT SUM(revenue) AS value FROM sales_daily WHERE is_new_product = 1 AND year = :year AND month = :month"
+  human: "SUM(units_sold × unit_price) WHERE is_new_product = 1"
+
+primary_source: sales_daily
+cadence: daily
+grain: [date, product_id, region]
+
+drivers:
+  - product_launch_ramp
+  - distribution_coverage
+  - promotional_spend
+  - customer_awareness
+
+alert_threshold:
+  pct_change: 20     # high threshold because early-stage volatility expected
+
+lineage:
+  upstream: [sales_daily.revenue, sales_daily.is_new_product]
+  transformations: "Filtered sum on is_new_product flag"
+  data_quality_check: "Product launch date 2025-08-01; data before this date will be empty"
+
+personas_allowed: [ceo, analyst]
+
+# SPARSE HISTORY — key flags
+sparse_history: true
+launch_date: "2025-08-01"
+min_periods_for_anomaly: 56    # 8 weeks of daily data required before anomaly detection
+history_warning_message: "Statistical baselines not yet established. Minimum 8 weeks of data required for anomaly detection. Showing raw trend only."

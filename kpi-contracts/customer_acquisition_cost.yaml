@@ -1,0 +1,37 @@
+id: cac
+name: Customer Acquisition Cost (CAC)
+description: Total marketing spend divided by the number of new customers acquired in the same period.
+
+formula:
+  sql: |
+    SELECT ROUND(
+      (SELECT SUM(spend_usd) FROM marketing_weekly WHERE year = :year AND month = :month) /
+      NULLIF((SELECT SUM(new_customers) FROM sales_daily WHERE year = :year AND month = :month), 0)
+    , 2) AS value
+  human: "Total Marketing Spend / New Customers Acquired"
+
+primary_source: marketing_weekly
+secondary_source: sales_daily
+cadence: monthly
+grain: [month]
+
+drivers:
+  - marketing_spend
+  - campaign_effectiveness
+  - channel_conversion
+  - seasonal_demand
+
+alert_threshold:
+  pct_change: 15     # ±15% triggers anomaly
+  business_impact_usd: 10000
+
+lineage:
+  upstream: [marketing_weekly.spend_usd, sales_daily.new_customers]
+  transformations: "Cross-source ratio; attribution window is calendar month"
+  data_quality_check: "Attribution lag may undercount new_customers by up to 10%"
+
+personas_allowed: [ceo, analyst]    # regional_manager NOT allowed
+
+sparse_history: false
+min_periods_for_anomaly: 4   # weeks
+low_confidence_threshold_weeks: 2   # if < 2 weeks of spend data, flag as low confidence

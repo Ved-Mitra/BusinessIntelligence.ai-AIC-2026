@@ -1,0 +1,32 @@
+id: conversion_rate
+name: Conversion Rate
+description: Percentage of website/store sessions that result in a completed sale (order).
+
+formula:
+  sql: "SELECT ROUND((SUM(units_sold) / NULLIF(SUM(sessions),0)) * 100, 3) AS value FROM sales_daily WHERE year = :year AND month = :month"
+  human: "Orders / Sessions × 100"
+
+primary_source: sales_daily
+cadence: daily
+grain: [date, channel, region]
+
+drivers:
+  - funnel_optimization
+  - campaign_targeting
+  - pricing
+  - seasonality
+  - product_relevance
+
+alert_threshold:
+  pct_point_change: 1    # ±1 pp triggers check
+
+lineage:
+  upstream: [sales_daily.units_sold, sales_daily.sessions]
+  transformations: "Ratio of units_sold (proxy for orders) to sessions"
+  data_quality_check: "Sessions are estimated; actual session tracking to be integrated in v2"
+
+personas_allowed: [ceo, analyst, regional_manager_north, regional_manager_south]
+region_filter_key: region
+
+sparse_history: false
+min_periods_for_anomaly: 14  # days
