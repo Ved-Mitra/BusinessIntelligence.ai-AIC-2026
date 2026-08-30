@@ -1,0 +1,13 @@
+year,month,month_name,total_opex_usd,ebitda_usd,headcount,external_events,data_quality_flag
+2025,1,January,673905.64,562565.86,143,,OK
+2025,2,February,750265.77,618292.71,144,,OK
+2025,3,March,767297.1,715990.18,145,Q1 product refresh launched,OK
+2025,4,April,821789.83,683328.98,146,,OK
+2025,5,May,856509.2,654761.42,147,,OK
+2025,6,June,889719.44,711636.43,148,Competitor price cut (Analytics category -12%),OK
+2025,7,July,845669.67,732236.77,149,,OK
+2025,8,August,908094.65,737626.53,150,,OK
+2025,9,September,884903.39,746694.02,151,Enterprise sales campaign started,OK
+2025,10,October,610026.73,423770.52,152,West region supply disruption (weeks 1-3); Discount campaign overshoot; Channel mix shifted to Online,PARTIAL
+2025,11,November,958448.7,822612.59,153,Holiday pre-season promotions started,OK
+2025,12,December,953859.81,762698.5,154,Year-end enterprise deals; Holiday spike,OK
