@@ -237,9 +237,11 @@ function renderDrivers(drivers) {
 }
 
 // ── Markdown → HTML renderer ─────────────────────────────────────────────────
-// Converts a subset of Markdown to safe HTML for the narrative panel.
-// Supports: headings (##/###), bold (**), italic (*), hr (---),
-//           unordered lists (* / - ), ordered lists (1. ), paragraphs.
+// Converts LLM markdown output to safe HTML.
+// Handles: ## headings, **bold**, *italic*, `code`, bullet/ordered lists,
+//          paragraphs, blank-line breaks.
+// Also strips pipe-table separator rows and converts pipe-table data rows
+// into readable bullet lists so stray table syntax never shows as raw |chars.
 function markdownToHtml(md) {
   if (!md) return '';
 
@@ -262,6 +264,20 @@ function markdownToHtml(md) {
 
   for (const rawLine of lines) {
     const line = rawLine.trimEnd();
+
+    // Skip pipe-table separator rows (e.g. |---|:---|)
+    if (/^\|[\s\-:|]+\|/.test(line)) continue;
+
+    // Convert pipe-table data rows into bullet list items
+    if (/^\|.+\|/.test(line)) {
+      const cells = line.split('|').map(c => c.trim()).filter(Boolean);
+      if (cells.length > 0) {
+        if (inOl) { out.push('</ol>'); inOl = false; }
+        if (!inUl) { out.push('<ul>'); inUl = true; }
+        out.push(`<li>${cells.map(c => inlineFormat(c)).join(' — ')}</li>`);
+      }
+      continue;
+    }
 
     // Horizontal rule
     if (/^---+$/.test(line.trim())) {

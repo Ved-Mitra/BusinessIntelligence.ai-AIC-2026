@@ -95,11 +95,27 @@ function mockResponse(systemPrompt) {
 
   let text;
   if (isCeo) {
-    text = 'Revenue declined 33.6% in October 2025, driven primarily by a supply disruption in the West region and an aggressive discount campaign that eroded unit prices by 7%. Immediate priority is to restore West region fulfilment capacity and review discount approval thresholds.';
+    text = `Revenue fell **33.6%** in October 2025, from **$2.14M** to **$1.42M**, driven primarily by a supply disruption in the West region that eroded unit volume by **43%**. A simultaneous discount overshoot cut average unit price by **$21.65**. Immediate priority: restore West fulfilment capacity and cap regional discount tiers.`;
   } else if (isAnalyst) {
-    text = 'October 2025 revenue of $1.42M is 33.6% below the September baseline of $2.14M (Z-score: −3.36, p < 0.01). Additive decomposition attributes the shortfall to three simultaneous drivers: (1) Volume effect: −$717K — West region units declined 22% due to a supply disruption in weeks 1–3; (2) Price effect: −$150K — average unit price fell $34 following the discount campaign; (3) Mix/Channel effect: −$32K — sessions shifted toward the Online channel (lower AOV). Data quality flag: financials_monthly shows PARTIAL for this period (supplier feed incomplete). Attribution confidence: High for volume and price; Moderate for mix due to session-proxy methodology.';
+    text = `October 2025 revenue is **$1.42M**, a statistically significant decline of **-33.56%** versus September's **$2.14M** baseline. The Z-score of **-3.36** (p < 0.01) confirms this as a confirmed anomaly — well beyond the ±2.5 threshold defined in the KPI contract.
+
+## Driver Breakdown
+
+Additive decomposition attributes the **-$717,667** shortfall to three simultaneous effects:
+
+- **Volume Effect (-$605,735 / 84.4%):** Units sold contracted **-43.2%**, heavily concentrated in the West region. A supplier bottleneck in weeks 1–3 restricted fulfilment across the Premium and Standard product lines.
+- **Price Effect (-$111,932 / 15.6%):** Average Selling Price fell from **$296.49 → $274.84** (-7.3%), driven by an unapproved regional discount campaign that exceeded the authorised 10% threshold.
+- **Mix & Channel Effect ($0 / 0%):** Residual mix shifts net to zero — the volume and price vectors fully account for the observed variance.
+
+## Data Quality
+
+The \`financials_monthly\` feed shows a **PARTIAL** data quality flag for October — the external supplier event log is incomplete for weeks 3–4. This does not affect the sales decomposition but limits EBITDA-level attribution.
+
+Confidence level: **High** — full daily granularity available, multi-source corroboration between sales and marketing feeds.`;
   } else {
-    text = 'North region revenue of $380K is down 28% in October. The decline is driven by the same price and seasonal factors affecting all regions, but North was not impacted by the West supply disruption. Review local promotional spend efficiency and channel mix for recovery levers.';
+    text = `North region revenue is **$380K** in October, down **28%** from September's **$540K**. The decline is driven primarily by a **price effect** from the same regional discount campaign affecting all zones, compounded by a moderate **-12% volume dip** in the Partner channel.
+
+The West region supply disruption did not directly impact North fulfilment. Focus areas for recovery: review Partner channel promotional spend efficiency and enforce the 10% maximum discount threshold at the regional level.`;
   }
 
     return {
